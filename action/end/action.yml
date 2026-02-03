@@ -1,0 +1,5 @@
+name: gh-transactional-end
+description: Commit or rollback a transaction
+runs:
+  using: node20
+  main: dist/index.js

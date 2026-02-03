@@ -1,0 +1,15 @@
+{
+  "name": "gh-transactional",
+  "private": true,
+  "workspaces": [
+    "actions/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "echo \"lint later\""
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

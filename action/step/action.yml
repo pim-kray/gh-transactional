@@ -1,0 +1,5 @@
+name: gh-transactional-step
+description: Execute a transactional step
+runs:
+  using: node20
+  main: dist/index.js

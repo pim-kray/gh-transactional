@@ -1,0 +1,5 @@
+name: gh-transactional-start
+description: Start a transactional workflow
+runs:
+  using: node20
+  main: dist/index.js

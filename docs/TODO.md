@@ -54,23 +54,27 @@ Each phase is intentionally small, testable, and shippable.
 
 ### Functionality
 
-* [ ] Load existing transaction state
-* [ ] Append step to state
-* [ ] Mark step as `STARTED`
-* [ ] Execute `run` command
-* [ ] Mark step as `COMPLETED` or `FAILED`
+* [x] Load existing transaction state
+* [x] Append step to state
+* [x] Mark step as `STARTED`
+* [x] Execute `run` command
+* [x] Mark step as `COMPLETED` or `FAILED`
 
 ### Code
 
-* [ ] `loadState()`
-* [ ] `saveState()`
-* [ ] `executeStep()`
-* [ ] `gh-transactional/step` action
+* [x] `loadState()`
+* [x] `saveState()`
+* [x] `executeStep()`
+* [x] `gh-transactional/step` action
 
 ### Tests
 
-* [ ] Step success updates state
-* [ ] Step failure updates state
+* [x] Step success updates state
+* [x] Step failure updates state
+* [x] Multiple steps in execution order
+* [x] Compensate command storage
+
+✅ Phase 2 complete when `step.spec.ts` is green.
 
 ---
 
@@ -80,22 +84,24 @@ Each phase is intentionally small, testable, and shippable.
 
 ### Functionality
 
-* [ ] Load final transaction state
-* [ ] Detect failed steps
-* [ ] Decide commit vs rollback
-* [ ] Execute compensations in reverse order
-* [ ] Update transaction status
+* [x] Load final transaction state
+* [x] Detect failed steps
+* [x] Decide commit vs rollback
+* [x] Execute compensations in reverse order
+* [x] Update transaction status
 
 ### Code
 
-* [ ] Rollback executor
-* [ ] Reverse-step traversal
-* [ ] `gh-transactional/end` action
+* [x] Rollback executor
+* [x] Reverse-step traversal
+* [x] `gh-transactional/end` action
 
 ### Tests
 
-* [ ] Commit path test (all steps succeed)
-* [ ] Rollback path test (one step fails)
+* [x] Commit path test (all steps succeed)
+* [x] Rollback path test (one step fails)
+
+✅ Phase 3 complete when `endTransaction.spec.ts` is green.
 
 ---
 

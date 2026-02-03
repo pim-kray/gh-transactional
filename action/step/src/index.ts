@@ -3,7 +3,15 @@ import {loadSpec} from "engine/src/transactionSpec";
 import {loadState, saveState} from "engine/src/state";
 import {executeStep} from "engine/src/executeStep";
 
-
+/**
+ * GitHub Action: Execute Transaction Step
+ *
+ * This action executes a single transactional step by:
+ * 1. Loading the transaction specification and state
+ * 2. Executing the run command
+ * 3. Marking the step as COMPLETED or FAILED
+ * 4. Saving the updated state
+ */
 async function run() {
     try {
         const stepId = core.getInput("id", { required: true });
@@ -24,8 +32,8 @@ async function run() {
         saveState(statePath, newState);
 
         core.info(`Step '${stepId}' completed`);
-    } catch (err: any) {
-        core.setFailed(err.message);
+    } catch (err) {
+        core.setFailed(err instanceof Error ? err.message : String(err));
     }
 }
 

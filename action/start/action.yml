@@ -1,5 +1,9 @@
 name: gh-transactional-start
 description: Start a transactional workflow
+inputs:
+  spec:
+    description: Path to transaction spec (tx.yaml)
+    required: true
 runs:
   using: node20
   main: dist/index.js

@@ -1,0 +1,13 @@
+# tx.yaml
+transaction:
+  id: deploy-production
+  mode: strict
+
+  state:
+    path: .tx/deploy-production.json
+
+  rollback:
+    strategy: reverse
+    on:
+      - failure
+      - cancel

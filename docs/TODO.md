@@ -1,5 +1,149 @@
-# TODO
+# gh-transactional — Phased TODO Roadmap
 
-Phase 0:
-initialize project
-setup design document
+This document is the **single practical roadmap** for building `gh-transactional`.
+Each phase is intentionally small, testable, and shippable.
+
+---
+
+## Phase 0 — Project Initialization (Foundation)
+
+**Goal:** create a clean, extensible repository structure. No behavior.
+
+* [x] Initialize repository
+* [x] Define monorepo structure (actions / packages)
+* [x] Create action folders (`start`, `step`, `end`)
+* [x] Create engine and shared packages
+* [x] Add `README.md`, `DESIGN.md`, `TODO.md`
+* [x] Set up TypeScript configuration
+* [x] Set up Jest for TypeScript
+
+✅ Phase 0 complete when repo builds and tests can run.
+
+---
+
+## Phase 1 — Transaction Start (Initialization)
+
+**Goal:** initialize a transaction from a spec file.
+
+### Functionality
+
+* [x] Load `tx.yaml`
+* [x] Validate transaction spec
+* [x] Create transaction state file
+* [x] Fail fast on invalid specs
+
+### Code
+
+* [x] `loadSpec()`
+* [x] `validateSpec()`
+* [x] `initState()`
+* [x] `gh-transactional/start` action wiring
+
+### Tests
+
+* [x] Happy-path test (valid spec)
+* [x] Negative test (invalid spec)
+
+✅ Phase 1 complete when `start.spec.ts` is green.
+
+---
+
+## Phase 2 — Transaction Step (State Mutation)
+
+**Goal:** register and execute a transactional step.
+
+### Functionality
+
+* [ ] Load existing transaction state
+* [ ] Append step to state
+* [ ] Mark step as `STARTED`
+* [ ] Execute `run` command
+* [ ] Mark step as `COMPLETED` or `FAILED`
+
+### Code
+
+* [ ] `loadState()`
+* [ ] `saveState()`
+* [ ] `executeStep()`
+* [ ] `gh-transactional/step` action
+
+### Tests
+
+* [ ] Step success updates state
+* [ ] Step failure updates state
+
+---
+
+## Phase 3 — Transaction End (Commit / Rollback Decision)
+
+**Goal:** decide and perform commit or rollback.
+
+### Functionality
+
+* [ ] Load final transaction state
+* [ ] Detect failed steps
+* [ ] Decide commit vs rollback
+* [ ] Execute compensations in reverse order
+* [ ] Update transaction status
+
+### Code
+
+* [ ] Rollback executor
+* [ ] Reverse-step traversal
+* [ ] `gh-transactional/end` action
+
+### Tests
+
+* [ ] Commit path test (all steps succeed)
+* [ ] Rollback path test (one step fails)
+
+---
+
+## Phase 4 — Multi-Job Support
+
+**Goal:** allow transactions to span multiple jobs.
+
+### Functionality
+
+* [ ] Upload transaction state as artifact
+* [ ] Download state in subsequent jobs
+* [ ] Resume transaction execution
+
+### Tests
+
+* [ ] Simulated multi-step execution using artifacts
+
+---
+
+## Phase 5 — Observability & UX
+
+**Goal:** make behavior obvious and debuggable.
+
+* [ ] Structured logging
+* [ ] Clear error messages
+* [ ] Final transaction summary output
+
+---
+
+## Phase 6 — CI & Release
+
+**Goal:** ship a credible v1.
+
+* [ ] CI workflow (`npm test`)
+* [ ] Version tagging (`v1.0.0`)
+* [ ] Release notes
+* [ ] Public usage example
+
+---
+
+## Working Rules
+
+* One phase at a time
+* Every phase must be testable
+* No behavior added without a test
+* Stop after Phase 3 if scope grows
+
+---
+
+**Current status:** Phase 1 complete
+**Next recommended step:** Phase 2 — Transaction Step

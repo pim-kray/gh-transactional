@@ -1,5 +1,15 @@
 name: gh-transactional-step
 description: Execute a transactional step
+inputs:
+  id:
+    required: true
+    description: TODO
+  run:
+    required: true
+    description: TODO
+  compensate:
+    required: false
+    description: TODO
 runs:
   using: node20
   main: dist/index.js

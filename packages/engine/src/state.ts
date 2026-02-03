@@ -30,10 +30,10 @@ export type TransactionState = {
     steps: StepState[];
 };
 
-export function loadState(path: string): TransactionState {
-    return JSON.parse(require("fs").readFileSync(path, "utf8"));
+export function loadState(statePath: string): TransactionState {
+    return JSON.parse(fs.readFileSync(statePath, "utf8"));
 }
 
-export function saveState(path: string, state: TransactionState) {
-    require("fs").writeFileSync(path, JSON.stringify(state, null, 2));
+export function saveState(statePath: string, state: TransactionState) {
+    fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
 }

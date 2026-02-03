@@ -1,8 +1,7 @@
 import * as core from "@actions/core";
 import {loadSpec} from "engine/src/transactionSpec";
-import {loadState} from "engine/src/state";
+import {loadState, saveState} from "engine/src/state";
 import {executeStep} from "engine/src/executeStep";
-import {saveState} from "@actions/core";
 
 
 async function run() {

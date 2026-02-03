@@ -3,13 +3,13 @@ description: Execute a transactional step
 inputs:
   id:
     required: true
-    description: TODO
+    description: Unique identifier for this step
   run:
     required: true
-    description: TODO
+    description: Command to execute for this step
   compensate:
     required: false
-    description: TODO
+    description: Command to execute if rollback is needed (optional)
 runs:
   using: node20
   main: dist/index.js

@@ -1,5 +1,4 @@
 import * as core from "@actions/core";
-import { loadSpec } from "../../../packages/engine/src/transactionSpec.js";
 import { loadState, saveState } from "../../../packages/engine/src/state.js";
 import { endTransaction } from "../../../packages/engine/src/endTransaction.js";
 import { downloadStateArtifact, uploadStateArtifact } from "../../../packages/shared/artifact.js";
@@ -10,8 +9,8 @@ import { logInfo, logError } from "../../../packages/shared/logger.js";
  *
  * This action finalizes a transaction by:
  * 1. Downloading the final state artifact
- * 2. Loading the transaction specification
- * 3. Loading the current transaction state
+ * 2. Loading the transaction state (which contains spec path)
+ * 3. Loading the transaction specification
  * 4. Deciding to commit or rollback based on step statuses
  * 5. Executing compensations if rollback is needed (even across jobs)
  * 6. Saving and uploading the final transaction state
@@ -24,11 +23,29 @@ async function run() {
         await downloadStateArtifact();
         logInfo("Downloaded final state artifact");
 
-        const spec = loadSpec("tx.yaml");
-        const statePath = spec.transaction.state.path;
+        // First load state to get spec path and state file location
+        const possibleStatePaths = [
+            ".gh-transaction/state.json",
+            "tx-state.json",
+            ".github/tx-state.json"
+        ];
 
-        const state = loadState(statePath);
-        logInfo(`Loaded state from ${statePath}`);
+        let state;
+        let statePath;
+        for (const path of possibleStatePaths) {
+            try {
+                state = loadState(path);
+                statePath = path;
+                logInfo(`Found state file at ${path}`);
+                break;
+            } catch {
+                // Try next path
+            }
+        }
+
+        if (!state || !statePath) {
+            throw new Error("Could not find state file. Make sure 'start' action ran successfully.");
+        }
 
         const finalState = endTransaction(state);
         logInfo(`Ended transaction, final status: ${finalState.status}`);

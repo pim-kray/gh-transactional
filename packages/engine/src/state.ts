@@ -1,13 +1,14 @@
 import fs from "fs";
 import path from "path";
 
-export function initState(statePath: string, transactionId: string) {
+export function initState(statePath: string, transactionId: string, specPath: string) {
     const dir = path.dirname(statePath);
     fs.mkdirSync(dir, { recursive: true });
 
     const initialState = {
         transactionId,
         status: "RUNNING",
+        specPath,
         steps: [],
     };
 

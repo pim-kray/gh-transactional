@@ -30,9 +30,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
-  # Simple integration test without multi-job complexity
-  test-transaction-basic:
-    name: Test Basic Transaction Flow
+  # Integration test - uses the actual actions
+  test-transaction-integration:
+    name: Test Transaction Integration
     runs-on: ubuntu-latest
     needs: test-single-job
     steps:
@@ -46,32 +46,47 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build actions
         run: npm run build
 
       - name: Create test spec
         run: |
-          mkdir -p .test-tx
-          cat > tx-test.yaml << EOF
+          cat > tx.yaml << EOF
           transaction:
-            id: test-basic
+            id: integration-test
             mode: strict
             state:
-              path: .test-tx/state.json
+              path: tx-state.json
           EOF
 
-      - name: Test start action (init transaction)
-        run: |
-          cd action/start
-          npm ci || true
-          npm run build || echo "Build action manually"
+      - name: Start transaction
+        uses: ./action/start
+        with:
+          spec: tx.yaml
 
-      - name: Verify state file created
+      - name: Execute step 1
+        uses: ./action/step
+        with:
+          id: step-1
+          run: echo "Step 1 executed"
+          compensate: echo "Step 1 rolled back"
+
+      - name: Execute step 2
+        uses: ./action/step
+        with:
+          id: step-2
+          run: echo "Step 2 executed"
+          compensate: echo "Step 2 rolled back"
+
+      - name: End transaction
+        uses: ./action/end
+
+      - name: Verify transaction completed
         run: |
-          if [ ! -f .test-tx/state.json ]; then
-            echo "❌ State file not created"
+          if [ ! -f tx-state.json ]; then
+            echo "❌ State file not found"
             exit 1
           fi
-          echo "✅ State file exists"
-          cat .test-tx/state.json
+          echo "✅ Transaction completed"
+          cat tx-state.json
 

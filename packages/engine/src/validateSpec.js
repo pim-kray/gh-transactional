@@ -1,5 +1,6 @@
-import { TransactionSpec } from "./transactionSpec.js";
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateSpec = validateSpec;
 /**
  * Validates that a transaction specification contains all required fields.
  *
@@ -11,17 +12,17 @@ import { TransactionSpec } from "./transactionSpec.js";
  * @param spec - The transaction specification to validate
  * @throws Error if any required field is missing or invalid
  */
-export function validateSpec(spec: TransactionSpec) {
+function validateSpec(spec) {
+    // Check for transaction root object
     if (!spec?.transaction) {
         throw new Error("Missing 'transaction' root");
     }
-
     const { id, state } = spec.transaction;
-
+    // Validate transaction ID is present
     if (!id) {
         throw new Error("transaction.id is required");
     }
-
+    // Validate state path is configured
     if (!state?.path) {
         throw new Error("transaction.state.path is required");
     }

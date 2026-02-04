@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { TransactionState } from "./state";
+import { TransactionState } from "./state.js";
 
 /**
  * Rolls back a transaction by executing compensation commands in reverse order.
@@ -16,16 +16,13 @@ import { TransactionState } from "./state";
  * @param state - Transaction state to rollback
  */
 export function rollbackTransaction(state: TransactionState) {
-    // Get completed steps with compensation in reverse order
     const completedSteps = state.steps
         .filter(s => s.status === "COMPLETED" && s.compensate)
         .reverse();
 
-    // Execute each compensation command
     for (const step of completedSteps) {
         execSync(step.compensate!, { stdio: "inherit" });
     }
 
-    // Mark transaction as aborted
     state.status = "ABORTED";
 }

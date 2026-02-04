@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
-import {loadSpec} from "../src/transactionSpec";
-import {validateSpec} from "../src/validateSpec";
-import {initState} from "../src/state";
+import {loadSpec} from "../src/transactionSpec.js";
+import {validateSpec} from "../src/validateSpec.js";
+import {initState} from "../src/state.js";
 
 const TEST_DIR = path.join(__dirname, ".tmp");
 

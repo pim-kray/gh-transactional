@@ -1,0 +1,6 @@
+transaction:
+  id: gh-transactional-test
+  mode: strict
+  state:
+    path: .gh-transaction/state.json
+

@@ -1,2 +1,9 @@
 .idea
 node_modules
+*.log
+.test-*
+.gh-transaction
+
+# TypeScript build output (except action dist folders)
+dist
+!action/*/dist

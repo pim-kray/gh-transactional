@@ -12,4 +12,4 @@ inputs:
     description: Command to execute if rollback is needed (optional)
 runs:
   using: node20
-  main: dist/index.js
+  main: ../../dist/action/step/src/index.js

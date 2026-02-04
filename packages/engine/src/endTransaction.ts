@@ -1,5 +1,6 @@
-import { TransactionState } from "./state";
-import { rollbackTransaction } from "./rollback";
+import { TransactionState } from "./state.js";
+import { rollbackTransaction } from "./rollback.js";
+import { logInfo, logError } from "../../shared/logger.js";
 
 /**
  * Ends a transaction by either committing or rolling back.
@@ -15,15 +16,16 @@ import { rollbackTransaction } from "./rollback";
  * @returns Updated transaction state with final status
  */
 export function endTransaction(state: TransactionState): TransactionState {
-    // Check if any step failed
+    logInfo("Ending transaction");
     const hasFailure = state.steps.some(s => s.status === "FAILED");
 
     if (hasFailure) {
-        // Rollback: execute compensations in reverse
+        logInfo("Failure detected, rolling back transaction");
         rollbackTransaction(state);
+        logInfo("Rollback complete");
     } else {
-        // Commit: mark transaction as successful
         state.status = "COMMITTED";
+        logInfo("Transaction committed");
     }
 
     return state;

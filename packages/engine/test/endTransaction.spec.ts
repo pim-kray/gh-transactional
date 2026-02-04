@@ -1,5 +1,5 @@
-import { endTransaction } from "../src/endTransaction";
-import { TransactionState } from "../src/state";
+import { endTransaction } from "../src/endTransaction.js";
+import { TransactionState } from "../src/state.js";
 import * as childProcess from "child_process";
 
 jest.mock("child_process");

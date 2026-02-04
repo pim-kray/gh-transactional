@@ -1,7 +1,7 @@
-import fs from "fs";
-import path from "path";
-import { loadState, saveState } from "../src/state";
-import { executeStep } from "../src/executeStep";
+import * as fs from "fs";
+import * as path from "path";
+import { loadState, saveState } from "../src/state.js";
+import { executeStep } from "../src/executeStep.js";
 
 const TMP = path.join(__dirname, ".tmp");
 

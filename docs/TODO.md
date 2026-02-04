@@ -111,13 +111,22 @@ Each phase is intentionally small, testable, and shippable.
 
 ### Functionality
 
-* [ ] Upload transaction state as artifact
-* [ ] Download state in subsequent jobs
-* [ ] Resume transaction execution
+* [x] Upload transaction state as artifact
+* [x] Download state in subsequent jobs
+* [x] Resume transaction execution
+
+### Code
+
+* [x] `artifact.ts` - Upload/download helpers
+* [x] Updated `start` action - Upload initial state
+* [x] Updated `step` action - Download → mutate → upload
+* [x] Updated `end` action - Download → commit/rollback → upload
 
 ### Tests
 
-* [ ] Simulated multi-step execution using artifacts
+* [x] Multi-job workflow example (`examples/multi-job.yml`)
+
+✅ Phase 4 complete when multi-job workflow runs successfully.
 
 ---
 
@@ -151,5 +160,7 @@ Each phase is intentionally small, testable, and shippable.
 
 ---
 
-**Current status:** Phase 1 complete
-**Next recommended step:** Phase 2 — Transaction Step
+**Current status:** Phase 4 code complete - ready for GitHub Actions testing
+**Next step:** Push to GitHub and test workflows in real environment
+
+See `TESTING.md` for testing instructions.

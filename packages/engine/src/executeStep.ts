@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
-import { TransactionState, StepState } from "./state";
+import { TransactionState, StepState } from "./state.js";
+import { logInfo, logError } from "../../shared/logger.js";
 
 /**
  * Executes a transactional step and updates the transaction state.
@@ -23,7 +24,6 @@ export function executeStep(
         compensate?: string;
     }
 ): TransactionState {
-    // Create initial step state
     const stepState: StepState = {
         id: step.id,
         status: "STARTED",
@@ -31,16 +31,16 @@ export function executeStep(
         compensate: step.compensate,
     };
 
-    // Add step to transaction state
     state.steps.push(stepState);
+    logInfo(`Executing step '${step.id}' with command: ${step.run}`);
 
     try {
-        // Execute the run command
         execSync(step.run, { stdio: "inherit" });
         stepState.status = "COMPLETED";
+        logInfo(`Step '${step.id}' completed successfully`);
     } catch (err) {
-        // Mark as failed and propagate error
         stepState.status = "FAILED";
+        logError(`Step '${step.id}' failed`, err instanceof Error ? err : undefined);
         throw err;
     }
 

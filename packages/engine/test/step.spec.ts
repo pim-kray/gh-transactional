@@ -25,6 +25,7 @@ test("successful step updates state to COMPLETED", () => {
     saveState(statePath, {
         transactionId: "test",
         status: "RUNNING",
+        specPath: "test-spec.yaml",
         steps: [],
     });
 
@@ -76,6 +77,7 @@ test("multiple steps are appended in execution order", () => {
     saveState(statePath, {
         transactionId: "test",
         status: "RUNNING",
+        specPath: "test-spec.yaml",
         steps: [],
     });
 

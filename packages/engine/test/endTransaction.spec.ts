@@ -6,6 +6,7 @@ test("commits transaction when no steps failed", () => {
     const state: TransactionState = {
         transactionId: "test",
         status: "RUNNING",
+        specPath: "test-spec.yaml",
         steps: [
             {
                 id: "step-1",
@@ -25,6 +26,7 @@ test("rolls back completed steps in reverse order on failure", () => {
     const state: TransactionState = {
         transactionId: "test",
         status: "RUNNING",
+        specPath: "test-spec.yaml",
         steps: [
             {
                 id: "step-1",

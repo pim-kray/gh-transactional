@@ -418,10 +418,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-## Related Projects
-
-- [Temporal](https://temporal.io/) - Workflow orchestration (more heavyweight)
-- [Camunda](https://camunda.com/) - BPMN-based workflow engine
-- [Netflix Conductor](https://github.com/Netflix/conductor) - Microservice orchestration
-
 `gh-transactional` is specifically designed for GitHub Actions and CI/CD use cases.

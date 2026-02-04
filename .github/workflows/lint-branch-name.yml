@@ -1,0 +1,23 @@
+name: Lint Branch Name
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name convention
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          
+          REGEX="^(feat|fix|chore|docs|test|refactor)\/.+"
+          
+          if [[ ! $BRANCH_NAME =~ $REGEX ]]; then
+            echo "❌ Error: Branch name '$BRANCH_NAME' does not follow the convention."
+            echo "Must start with: feat/, fix/, chore/, docs/, test/, or refactor/"
+            exit 1
+          else
+            echo "✅ Branch name '$BRANCH_NAME' is valid."
+          fi

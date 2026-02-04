@@ -106,6 +106,21 @@ Pull requests should:
 * Preserve backward compatibility unless explicitly discussed
 * Include tests where behavior changes or edge cases are involved
 
+Follow the template provided in the pull request form:
+
+```
+## Description
+## Related Issue
+## ✅ Checklist
+- [ ] My branch name follows the convention: `prefix/description`
+- [ ] I have read the [CONTRIBUTING.md](CONTRIBUTING.md)
+- [ ] I have added tests to cover my changes
+- [ ] All new and existing tests passed
+- [ ] My changes follow the Saga/Transactional principles (deterministic, explicit rollbacks)
+
+## Screenshots / Logs (if applicable)
+```
+
 ### Required for Pull Requests
 
 * Clear description of the change

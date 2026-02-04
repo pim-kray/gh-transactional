@@ -57,6 +57,7 @@ test("steps without compensate are skipped during rollback", () => {
     const state: TransactionState = {
         transactionId: "test",
         status: "RUNNING",
+        specPath: "test-spec.yaml",
         steps: [
             {
                 id: "step-1",

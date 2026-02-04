@@ -1,4 +1,6 @@
 import * as core from "@actions/core";
+import fs from "fs";
+import path from "path";
 import {loadSpec} from "../../../packages/engine/src/transactionSpec.js";
 import {validateSpec} from "../../../packages/engine/src/validateSpec.js";
 import {initState} from "../../../packages/engine/src/state.js";
@@ -12,7 +14,7 @@ import { logInfo, logError } from "../../../packages/shared/logger.js";
  * 1. Loading the transaction specification from a YAML file
  * 2. Validating the spec structure
  * 3. Creating an initial transaction state file
- * 4. Uploading state as artifact for multi-job workflows
+ * 4. Uploading state and spec as artifacts for multi-job workflows
  */
 async function run() {
 
@@ -25,8 +27,17 @@ async function run() {
 
         const { id, state } = spec.transaction;
 
-        initState(state.path, id);
+        // Store absolute path to spec file in state
+        const absoluteSpecPath = path.resolve(specPath);
+        initState(state.path, id, absoluteSpecPath);
         logInfo(`Initialized state for transaction '${id}' at ${state.path}`);
+
+        // Copy spec file to state directory so it's available in other jobs
+        const stateDir = path.dirname(state.path);
+        const specFileName = path.basename(specPath);
+        const specCopyPath = path.join(stateDir, specFileName);
+        fs.copyFileSync(specPath, specCopyPath);
+        logInfo(`Copied spec file to ${specCopyPath}`);
 
         await uploadStateArtifact(state.path);
         logInfo(`Uploaded state artifact for transaction '${id}'`);

@@ -36,7 +36,7 @@ transaction:
 
     const spec = loadSpec(specPath);
     validateSpec(spec);
-    initState(statePath, spec.transaction.id);
+    initState(statePath, spec.transaction.id, specPath);
 
     expect(fs.existsSync(statePath)).toBe(true);
 
@@ -45,6 +45,7 @@ transaction:
     expect(state).toEqual({
         transactionId: "test-transaction",
         status: "RUNNING",
+        specPath: specPath,
         steps: [],
     });
 });

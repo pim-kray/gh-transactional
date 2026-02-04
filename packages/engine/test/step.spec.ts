@@ -49,6 +49,7 @@ test("failing step updates state to FAILED", () => {
     saveState(statePath, {
         transactionId: "test",
         status: "RUNNING",
+        specPath: "test-spec.yaml",
         steps: [],
     });
 
@@ -113,6 +114,7 @@ test("compensate command is stored when provided", () => {
     saveState(statePath, {
         transactionId: "test",
         status: "RUNNING",
+        specPath: "test-spec.yaml",
         steps: [],
     });
 

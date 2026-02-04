@@ -1,5 +1,5 @@
 import fs from "fs";
-import yaml from "js-yaml"
+import yaml from "js-yaml";
 
 export type TransactionSpec = {
     transaction: {
@@ -12,6 +12,19 @@ export type TransactionSpec = {
 }
 
 export function loadSpec(path: string): TransactionSpec {
-    const raw = fs.readFileSync(path, "utf8");
-    return yaml.load(raw) as TransactionSpec;
+    try {
+        const raw = fs.readFileSync(path, "utf8");
+        const spec = yaml.load(raw) as TransactionSpec;
+
+        if (!spec) {
+            throw new Error("Spec file is empty or invalid YAML");
+        }
+
+        return spec;
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new Error(`Failed to load transaction spec from ${path}: ${error.message}`);
+        }
+        throw error;
+    }
 }

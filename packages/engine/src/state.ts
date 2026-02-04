@@ -32,5 +32,18 @@ export function loadState(statePath: string): TransactionState {
 }
 
 export function saveState(statePath: string, state: TransactionState) {
-    fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
+    try {
+        const dir = path.dirname(statePath);
+        fs.mkdirSync(dir, { recursive: true });
+
+        // Atomic write: write to temp file, then rename
+        const tempPath = `${statePath}.tmp`;
+        fs.writeFileSync(tempPath, JSON.stringify(state, null, 2));
+        fs.renameSync(tempPath, statePath);
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new Error(`Failed to save transaction state to ${statePath}: ${error.message}`);
+        }
+        throw error;
+    }
 }

@@ -160,7 +160,7 @@ Each phase is intentionally small, testable, and shippable.
 
 ---
 
-**Current status:** Phase 4 code complete - ready for GitHub Actions testing
-**Next step:** Push to GitHub and test workflows in real environment
+**Current status:** Phase 4 complete. CI workflow is set up.
+**Next step:** Focus on Observability (Phase 5) and releasing alpha.
 
 See `TESTING.md` for testing instructions.

@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 
 const LOG_FILE = process.env.GH_TX_LOG_FILE || 'transaction.log';
 
@@ -18,7 +17,7 @@ export function logError(message: string, error?: Error) {
 function appendLog(msg: string) {
   try {
     fs.appendFileSync(LOG_FILE, msg + '\n');
-  } catch (e) {
+  } catch {
     // Fallback: ignore file errors
   }
 }

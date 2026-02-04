@@ -1,6 +1,6 @@
 import { TransactionState } from "./state.js";
 import { rollbackTransaction } from "./rollback.js";
-import { logInfo, logError } from "../../shared/logger.js";
+import { logInfo } from "../../shared/logger.js";
 
 /**
  * Ends a transaction by either committing or rolling back.

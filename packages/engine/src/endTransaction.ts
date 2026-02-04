@@ -17,12 +17,14 @@ import { logInfo } from "../../shared/logger.js";
  */
 export function endTransaction(state: TransactionState): TransactionState {
     logInfo("Ending transaction");
+
     const hasFailure = state.steps.some(s => s.status === "FAILED");
 
     if (hasFailure) {
         logInfo("Failure detected, rolling back transaction");
         rollbackTransaction(state);
-        logInfo("Rollback complete");
+        state.status = "ABORTED"; // expliciet
+        logInfo("Transaction aborted");
     } else {
         state.status = "COMMITTED";
         logInfo("Transaction committed");

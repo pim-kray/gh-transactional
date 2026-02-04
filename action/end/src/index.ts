@@ -9,11 +9,11 @@ import { logInfo, logError } from "../../../packages/shared/logger.js";
  *
  * This action finalizes a transaction by:
  * 1. Downloading the final state artifact
- * 2. Loading the transaction state (which contains spec path)
- * 3. Loading the transaction specification
- * 4. Deciding to commit or rollback based on step statuses
- * 5. Executing compensations if rollback is needed (even across jobs)
- * 6. Saving and uploading the final transaction state
+ * 2. Loading the transaction state
+ * 3. Deciding to commit or rollback based on step statuses
+ * 4. Executing compensations if rollback is needed
+ * 5. Saving and uploading the final transaction state
+ * 6. Failing the workflow ONLY if rollback occurred
  */
 async function run() {
 
@@ -23,7 +23,7 @@ async function run() {
         await downloadStateArtifact();
         logInfo("Downloaded final state artifact");
 
-        // First load state to get spec path and state file location
+        // Locate transaction state file
         const possibleStatePaths = [
             ".gh-transaction/state.json",
             "tx-state.json",
@@ -48,7 +48,7 @@ async function run() {
         }
 
         const finalState = endTransaction(state);
-        logInfo(`Ended transaction, final status: ${finalState.status}`);
+        logInfo(`Transaction ended with status: ${finalState.status}`);
 
         saveState(statePath, finalState);
         logInfo(`Saved final state to ${statePath}`);
@@ -57,9 +57,13 @@ async function run() {
         logInfo("Uploaded final state artifact");
 
         if (finalState.status === "ABORTED") {
-            core.setFailed("Transaction rolled back due to step failure(s)");
+            const failedSteps = finalState.steps.filter(s => s.status === "FAILED");
+            const failedStepIds = failedSteps.map(s => s.id).join(", ");
+
+            core.error(`❌ Transaction rolled back due to failed step(s): ${failedStepIds}`);
+            core.setFailed(`Transaction aborted. Failed steps: ${failedStepIds}`);
         } else {
-            core.info("Transaction committed successfully");
+            core.info(`✅ Transaction '${state.transactionId}' committed successfully`);
         }
     } catch (err) {
         logError("Failed to end transaction", err instanceof Error ? err : undefined);

@@ -1,87 +1,115 @@
 # gh-transactional
 
-> **Transactional workflows for GitHub Actions.**
+> **Transactional workflows for GitHub Actions — because half-applied pipelines are worse than failures.**
 
-`gh-transactional` brings **transactional integrity** to GitHub Actions workflows by applying the **Saga Pattern**.  
-It allows complex workflows—spanning multiple steps or jobs—to either **complete fully** or **roll back safely** to a consistent state.
+`gh-transactional` is an open-source experiment that brings **transactional behavior** to GitHub Actions workflows using the **Saga Pattern**.
 
-This prevents half-applied deployments, manual recovery work, and brittle `if: failure()` logic.
+It lets you define workflows where:
+- side effects are explicit
+- failures are expected
+- rollback is intentional, not an afterthought
 
-⚠️ **Status:** Experimental (Phase 4 complete).  
-The API is evolving and not yet considered stable.
+This project exists because I got tired of fixing broken pipelines *after* they already changed the world.
 
----
-
-## Why gh-transactional exists
-
-GitHub Actions is excellent for linear automation, but it has no concept of **atomic execution**.
-
-If a workflow fails halfway through:
-- earlier steps remain applied
-- infrastructure, databases, or environments are left inconsistent
-- recovery is manual, error-prone, and stressful
-
-In practice, this leads to:
-- fragile deployment pipelines
-- defensive scripting
-- “we’ll fix it forward” culture
-
-`gh-transactional` solves this by making rollback a **first-class concept**.
+⚠️ **Status:** Experimental (`0.0.x-alpha`)  
+The core is stable, the API is still evolving.
 
 ---
 
-## The core idea: Saga-based orchestration
+## Why this exists (personal context)
 
-Instead of relying on conditional steps or duplicated cleanup logic, `gh-transactional` models a workflow as a **transaction**:
+GitHub Actions is great at automation — until something fails halfway through.
 
-- Each step executes a **forward action** (`run`)
-- Optionally paired with a **compensation action** (`compensate`)
-- If a later step fails, previously completed steps are compensated in **reverse order**
+If a workflow crashes mid-run:
+- tags are already pushed
+- secrets are already rotated
+- deployments are already live
+- databases are half-migrated
 
-This follows the **Saga Pattern**, adapted for CI/CD workflows.
+At that point you’re no longer debugging CI —  
+you’re doing **production recovery inside a log viewer**.
+
+Most workflows “solve” this with:
+- `if: failure()` blocks
+- duplicated cleanup logic
+- best-effort bash scripts
+- or just fixing things manually
+
+That doesn’t scale.  
+And it definitely doesn’t feel safe.
+
+So I built `gh-transactional`.
 
 ---
 
-## What gh-transactional provides
+## The idea (simple, not magical)
 
-- **Transactional execution** across multiple steps or jobs
-- **Explicit rollback semantics** (no hidden magic)
-- **Reverse-order compensation** for safe recovery
-- **Persistent transaction state** via `tx-state.json`
-- **Predictable behavior** instead of conditional chaos
+`gh-transactional` treats a workflow like a **transaction**:
 
-What it deliberately does **not** provide:
-- ACID guarantees
-- automatic rollback without compensation scripts
-- implicit or “best guess” recovery
+- each step does something
+- optionally defines how to undo it
+- if anything fails later → earlier changes are rolled back
+
+This follows the **Saga Pattern**, adapted for CI/CD.
+
+There is:
+- no hidden logic
+- no guessing
+- no automatic “smart” rollback
+
+If you want something undone, **you define how**.
+
+---
+
+## What it gives you
+
+✔ Explicit rollback semantics  
+✔ Reverse-order compensation (LIFO)  
+✔ Transaction state persisted across jobs  
+✔ Works with real side effects (GitHub, infra, files, secrets, DBs)  
+✔ Predictable behavior
+
+What it **does not** try to be:
+
+✖ ACID transactions  
+✖ A workflow scheduler  
+✖ A DAG engine  
+✖ “Undo everything automatically” magic
+
+This is about **control**, not convenience.
 
 ---
 
 ## How it works (high level)
 
-1. A transaction is started using a transaction specification (`tx.yaml`)
-2. Each workflow step registers itself and mutates the transaction state
-3. If all steps succeed, the transaction is committed
-4. If any step fails, completed steps are compensated in reverse order
+1. You start a transaction using a `tx.yaml` spec
+2. Each transactional step:
+    - executes a command
+    - records its status
+3. If all steps succeed → transaction commits
+4. If any step fails → completed steps are compensated in reverse order
+5. State is persisted using GitHub artifacts, so it works across jobs
 
-The transaction state is persisted, allowing workflows to span **multiple GitHub jobs**.
+That’s it.
 
 ---
 
-## Example: Transactional deployment
+## Minimal example
+
+### Transaction spec (`tx.yaml`)
 
 ```yaml
-# tx.yaml
 transaction:
-  id: infrastructure-setup
+  id: deploy-example
   mode: strict
   state:
     path: tx-state.json
 ```
 
+### Workflow Example
+
 ```yaml
-# .github/workflows/deploy.yml
-name: Deploy Infrastructure
+name: Transactional Deploy
 
 on: [push]
 
@@ -90,332 +118,124 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      # Start the transaction
-      - uses: pim-kray/gh-transactional/action/start@v1
+
+      - uses: pim-kray/gh-transactional/action/start@v0.0.7-alpha
         with:
           spec: tx.yaml
-      
-      # Step 1: Provision infrastructure
-      - uses: pim-kray/gh-transactional/action/step@v1
+
+      - uses: pim-kray/gh-transactional/action/step@v0.0.7-alpha
         with:
-          id: provision-infra
-          run: terraform apply -auto-approve
-          compensate: terraform destroy -auto-approve
-      
-      # Step 2: Deploy database migrations
-      - uses: pim-kray/gh-transactional/action/step@v1
+          id: create-tag
+          run: git tag v1.2.3 && git push origin v1.2.3
+          compensate: git push --delete origin v1.2.3 || true
+
+      - uses: pim-kray/gh-transactional/action/step@v0.0.7-alpha
         with:
-          id: migrate-db
-          run: ./scripts/migrate-up.sh
-          compensate: ./scripts/migrate-down.sh
-      
-      # Step 3: Deploy application
-      - uses: pim-kray/gh-transactional/action/step@v1
-        with:
-          id: deploy-app
-          run: kubectl apply -f manifests/
-          compensate: kubectl delete -f manifests/
-      
-      # Commit or rollback the transaction
-      - uses: pim-kray/gh-transactional/action/end@v1
+          id: deploy
+          run: ./deploy.sh
+          compensate: ./rollback.sh
+
+      - uses: pim-kray/gh-transactional/action/end@v0.0.7-alpha
 ```
 
-If step 3 fails, the transaction automatically:
-1. Rolls back the application deployment
-2. Rolls back the database migrations
-3. Destroys the infrastructure
+### Multi-job transactions
 
-All in reverse order. No manual cleanup required.
+Transactions can span multiple jobs.
 
----
-
-## Installation & Usage
-
-### 1. Create a transaction specification
-
-Create a `tx.yaml` file in your repository:
+State is stored as a versioned artifact and restored automatically.
 
 ```yaml
-transaction:
-  id: my-deployment
-  mode: strict
-  state:
-    path: tx-state.json
-```
-
-### 2. Add the actions to your workflow
-
-```yaml
-name: My Transactional Workflow
-
-on: [push]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      # Start transaction
-      - uses: pim-kray/gh-transactional/action/start@v1
-        with:
-          spec: tx.yaml
-      
-      # Add transactional steps
-      - uses: pim-kray/gh-transactional/action/step@v1
-        with:
-          id: step-1
-          run: echo "Executing step 1"
-          compensate: echo "Rolling back step 1"
-      
-      - uses: pim-kray/gh-transactional/action/step@v1
-        with:
-          id: step-2
-          run: echo "Executing step 2"
-          compensate: echo "Rolling back step 2"
-      
-      # End transaction
-      - uses: pim-kray/gh-transactional/action/end@v1
-```
-
----
-
-## Multi-Job Workflows
-
-Transactions can span multiple GitHub Actions jobs. The state is preserved via artifacts:
-
-```yaml
-name: Multi-Job Transaction
-
-on: [push]
-
 jobs:
   start:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pim-kray/gh-transactional/action/start@v1
+      - uses: pim-kray/gh-transactional/action/start@v0.0.7-alpha
         with:
           spec: tx.yaml
-  
-  provision:
+
+  deploy:
     needs: start
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pim-kray/gh-transactional/action/step@v1
-        with:
-          id: provision-infra
-          run: terraform apply -auto-approve
-          compensate: terraform destroy -auto-approve
-  
-  deploy:
-    needs: provision
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pim-kray/gh-transactional/action/step@v1
+      - uses: pim-kray/gh-transactional/action/step@v0.0.7-alpha
         with:
           id: deploy-app
-          run: kubectl apply -f manifests/
-          compensate: kubectl delete -f manifests/
-  
-  finalize:
+          run: ./deploy.sh
+          compensate: ./rollback.sh
+
+  end:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pim-kray/gh-transactional/action/end@v1
+      - uses: pim-kray/gh-transactional/action/end@v0.0.7-alpha
 ```
+
+## Rollback Semantics (Important!)
+
+Rollback is:
+- Explicit
+- Reverse-order
+- Best-effort
+
+rules: 
+- Only steps that completed successfully are compensated.
+- Steps without `compensate` are skipped.
+- compensation failures are logged but do not stop rollback
+- the transaction ends as `ABORTED`
+
+This keeps behavior deteministic and auditable.
+
 
 ---
 
-## API Reference
-
-### `action/start`
-
-Initializes a new transaction.
-
-**Inputs:**
-- `spec` (required): Path to the transaction specification file (e.g., `tx.yaml`)
-
-**Example:**
-```yaml
-- uses: pim-kray/gh-transactional/action/start@v1
-  with:
-    spec: tx.yaml
-```
-
-### `action/step`
-
-Executes a transactional step with optional compensation.
-
-**Inputs:**
-- `id` (required): Unique identifier for this step
-- `run` (required): Command to execute for this step
-- `compensate` (optional): Command to execute if rollback is needed
-
-**Example:**
-```yaml
-- uses: pim-kray/gh-transactional/action/step@v1
-  with:
-    id: my-step
-    run: ./deploy.sh
-    compensate: ./rollback.sh
-```
-
-### `action/end`
-
-Finalizes the transaction, either committing or rolling back.
-
-**Inputs:** None
-
-**Example:**
-```yaml
-- uses: pim-kray/gh-transactional/action/end@v1
-```
-
-**Behavior:**
-- If all steps succeeded → transaction is **committed**
-- If any step failed → executes compensations in **reverse order**, transaction is **aborted**
+## What is this good for?
+- Versioning & Release
+- secret rotation
+- infrastructure changes
+- database migrations
+- deployments
+- stages rollouts
+- destructive workflow you really want to undo safely
 
 ---
 
-## Transaction Specification
+## What you need to do yourself
+- write idempotent compensation scripts
+- think about side effects
+- accept that rollback is a design decision, not a fallback
 
-The `tx.yaml` file defines the transaction configuration:
+This tool won't save you from bad scripts...
 
-```yaml
-transaction:
-  id: unique-transaction-id
-  mode: strict  # or 'relaxed' (future)
-  state:
-    path: path/to/state.json  # where to store transaction state
-```
+It just gives you a clean structure to reason about them.
 
-**Fields:**
-- `id`: Unique identifier for this transaction
-- `mode`: Execution mode (`strict` is currently the only supported mode)
-- `state.path`: File path where transaction state will be persisted
 
 ---
-
-## How Rollback Works
-
-When a step fails:
-
-1. The transaction status is set to `ABORTED`
-2. All completed steps are examined in **reverse order**
-3. For each step with a `compensate` command:
-   - The compensation command is executed
-   - If compensation fails, an error is logged but rollback continues
-4. Steps without a `compensate` command are skipped
-5. The final transaction state is saved
-
-Example:
-```
-Step 1: ✅ run (provision infra) → compensate defined
-Step 2: ✅ run (deploy db) → compensate defined
-Step 3: ❌ run (deploy app) → FAILED
-
-Rollback sequence:
-1. Step 2: compensate (rollback db)
-2. Step 1: compensate (destroy infra)
-```
-
----
-
-## Logging & Telemetry
-
-All transaction actions include detailed logging:
-
-```
-[INFO] 2026-02-04T09:00:00.000Z Starting transaction initialization
-[INFO] 2026-02-04T09:00:01.000Z Initialized state for transaction 'my-tx' at tx-state.json
-[INFO] 2026-02-04T09:00:02.000Z Executing step 'step-1' with command: ./deploy.sh
-[INFO] 2026-02-04T09:00:05.000Z Step 'step-1' completed successfully
-[ERROR] 2026-02-04T09:00:10.000Z Step 'step-2' failed
-[INFO] 2026-02-04T09:00:11.000Z Failure detected, rolling back transaction
-[INFO] 2026-02-04T09:00:15.000Z Rollback complete
-```
-
-Logs are written to:
-- GitHub Actions console output
-- Local log file (`transaction.log` by default, configurable via `GH_TX_LOG_FILE` env var)
-
----
-
-## Best Practices
-
-### 1. Make compensation idempotent
-```yaml
-compensate: |
-  kubectl delete -f manifests/ || true
-  terraform destroy -auto-approve -lock=false
-```
-
-### 2. Use meaningful step IDs
-```yaml
-id: provision-aws-eks-cluster  # Good
-id: step-1                      # Avoid
-```
-
-### 3. Test your compensations
-Compensation scripts should be tested independently to ensure they work correctly.
-
-### 4. Keep steps atomic
-Each step should do one logical thing. This makes compensation clearer and more reliable.
-
-### 5. Handle stateless operations
-For operations that don't need compensation (like notifications), simply omit the `compensate` field:
-
-```yaml
-- uses: pim-kray/gh-transactional/action/step@v1
-  with:
-    id: notify-slack
-    run: ./notify-slack.sh
-    # No compensate - this is idempotent/informational
-```
-
----
-
-## Troubleshooting
-
-### State file not found
-Ensure the `tx.yaml` file exists and the `state.path` is writable.
-
-### Artifact upload conflicts
-If you see "artifact with this name already exists", this is expected behavior. The actions use versioned artifacts internally to maintain state across jobs.
-
-### Compensation fails
-Compensations should be defensive and handle failure gracefully. Use `|| true` or proper error handling in your scripts.
-
----
-
 ## Roadmap
-
-- [x] Phase 1: Core transaction engine
-- [x] Phase 2: Basic GitHub Actions integration
-- [x] Phase 3: Multi-job support via artifacts
-- [x] Phase 4: Artifact-based state management
-- [x] Phase 5: Logging and telemetry
-- [ ] Phase 6: Advanced features (parallel steps, nested transactions)
-- [ ] Phase 7: GitHub Marketplace publication
-- [ ] Phase 8: Observability dashboard
-
----
-
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+- [x] Transaction engine
+- [x] Multi-job support
+- [x] Artifact-based state
+- [x] Real-world rollback tests
+- [ ] parallel steps
+- [ ] failure policies per group
+- [ ] GitHub Marketplace release
+- [ ] Better state introspection
+- [ ] Simplify usage
 
 ---
+# Why is this open-source?
 
-## License
+As a devops engineer, I often had scripts that couldn't be run in a transactional context. but that would be great to have in CI/CD.
+I Did not research any existing solutions, since I am also learning more about CI/CD, so this was the perfect chance to try something new.
 
-MIT License - see [LICENSE](LICENSE) for details.
+I built this, because I needed it, and figured it might be useful to others.
+
 
 ---
+# Contributing
+PRs are welcome! I will review them myself.
+Please read [CONTRIBUTING](CONTRIBUTING.md)
 
-`gh-transactional` is specifically designed for GitHub Actions and CI/CD use cases.
+---
+# LICENSE
+MIT
+[LICENSE](LICENSE)

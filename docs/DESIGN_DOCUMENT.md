@@ -286,10 +286,3 @@ For teams, this results in:
 * clearer operational understanding
 
 ---
-
-## 14. Next Steps
-
-1. Finalize the transaction spec (`tx.yaml`)
-2. Formalize the state file schema
-3. Implement the transaction engine
-4. Create the GitHub Action wrapper

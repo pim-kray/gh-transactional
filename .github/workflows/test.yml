@@ -150,8 +150,8 @@ jobs:
             exit 1
           fi
           
-          # Check if transaction was aborted
-          if grep -q '"status":"ABORTED"' .gh-transaction/state.json; then
+          # Check if transaction was aborted (handle whitespace in JSON)
+          if grep -q '"status"[[:space:]]*:[[:space:]]*"ABORTED"' .gh-transaction/state.json; then
             echo "✅ Transaction correctly rolled back"
             cat .gh-transaction/state.json
           else

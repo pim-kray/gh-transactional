@@ -1,112 +1,55 @@
-# gh-transactional
+![CI](https://github.com/pim-kray/gh-transactional/actions/workflows/ci.yml/badge.svg) 
+![Status](https://img.shields.io/badge/status-experimental-orange)
+![GitHub Actions](https://img.shields.io/badge/platform-GitHub%20Actions-black?logo=github)
+![Release](https://img.shields.io/github/v/release/pim-kray/gh-transactional)
+![License](https://img.shields.io/github/license/pim-kray/gh-transactional)
+![Discussions](https://img.shields.io/github/discussions/pim-kray/gh-transactional)
+![Last commit](https://img.shields.io/github/last-commit/pim-kray/gh-transactional)
 
-> **Transactional workflows for GitHub Actions — because half-applied pipelines are worse than failures.**
-
-`gh-transactional` is an open-source experiment that brings **transactional behavior** to GitHub Actions workflows using the **Saga Pattern**.
-
-It lets you define workflows where:
-- side effects are explicit
-- failures are expected
-- rollback is intentional, not an afterthought
-
-This project exists because I got tired of fixing broken pipelines *after* they already changed the world.
-
-⚠️ **Status:** Experimental (`0.0.x-alpha`)  
-The core is stable, the API is still evolving.
+Please provide feedback, we are interested in your thoughts and suggestions!
 
 ---
 
-## Why this exists (personal context)
-
-GitHub Actions is great at automation — until something fails halfway through.
-
-If a workflow crashes mid-run:
-- tags are already pushed
-- secrets are already rotated
-- deployments are already live
-- databases are half-migrated
-
-At that point you’re no longer debugging CI —  
-you’re doing **production recovery inside a log viewer**.
-
-Most workflows “solve” this with:
-- `if: failure()` blocks
-- duplicated cleanup logic
-- best-effort bash scripts
-- or just fixing things manually
-
-That doesn’t scale.  
-And it definitely doesn’t feel safe.
-
-So I built `gh-transactional`.
+# Table of Contents
+- [About](#about)
+- [How to use it](#how-to-use-it)
+- [Who is the maintainer](#who-is-the-maintainer)
+- [Collaborate](#collaborate)
+- [License](#license)
 
 ---
 
-## The idea (simple, not magical)
+## About
+`gh-transactional` has been inspired by my own experience with learning CI-CD. After making the jump from being a backend-engineer to a CI/CD engineer, I noticed that I was looking for something similar to how `@Transactional` works in Spring.
 
-`gh-transactional` treats a workflow like a **transaction**:
+The idea is to be able to rollback changes that have been made by your workflows in case of an error. Imagine if you are
+updating the version of your app, but the tests are failing. It would be nice to revert that version and first fix your tests.
 
-- each step does something
-- optionally defines how to undo it
-- if anything fails later → earlier changes are rolled back
+This is done by using a SAGA pattern. A SAGA pattern is a way to manage long-running or distributed processes by splititng them into steps.
+The steps are used in our project as well. When you start a chain of jobs or steps in your `.yml` file, you can annotate them with
+`start`, then `step` and finally `end`.
 
-This follows the **Saga Pattern**, adapted for CI/CD.
+Ideally, it would then revert all changes that have been made. However, there are limitations. For example, database changes
+are not easily reverted at this stage.
 
-There is:
-- no hidden logic
-- no guessing
-- no automatic “smart” rollback
+## How to use it
 
-If you want something undone, **you define how**.
+> **warning: This is very experimental, if your workflows have a lot of powerful steps, avoid using it.**
 
----
-
-## What it gives you
-
-✔ Explicit rollback semantics  
-✔ Reverse-order compensation (LIFO)  
-✔ Transaction state persisted across jobs  
-✔ Works with real side effects (GitHub, infra, files, secrets, DBs)  
-✔ Predictable behavior
-
-What it **does not** try to be:
-
-✖ ACID transactions  
-✖ A workflow scheduler  
-✖ A DAG engine  
-✖ “Undo everything automatically” magic
-
-This is about **control**, not convenience.
-
----
-
-## How it works (high level)
-
-1. You start a transaction using a `tx.yaml` spec
-2. Each transactional step:
-    - executes a command
-    - records its status
-3. If all steps succeed → transaction commits
-4. If any step fails → completed steps are compensated in reverse order
-5. State is persisted using GitHub artifacts, so it works across jobs
-
-That’s it.
-
----
-
-## Minimal example
-
-### Transaction spec (`tx.yaml`)
-
+**step 1**: Create a simple spec file:
 ```yaml
 transaction:
-  id: deploy-example
+  id: spec-example
   mode: strict
   state:
     path: tx-state.json
 ```
 
-### Workflow Example
+The reason for this spec file is that we are creating a "contract" for GitHub actions. We tell it how strict it should be,
+where the state 'lives.' I am currently investigating if this could be more flexible or easy to work with. The reason for
+the spec file to be used now is that you can create multiple specs, so you can 'configure' each workflow based on your needs.
+
+**step 2**: Create a workflow file that uses the spec:
 
 ```yaml
 name: Transactional Deploy
@@ -138,12 +81,10 @@ jobs:
       - uses: pim-kray/gh-transactional/action/end@v0.0.7-alpha
 ```
 
-### Multi-job transactions
+You can see that we are using the 'start' 'step' and 'end' actions. These actions are how the SAGA pattern is implemented.
+The `compensate` step is optional, and is used to revert changes that have been made.
 
-Transactions can span multiple jobs.
-
-State is stored as a versioned artifact and restored automatically.
-
+**Multi-job example:**
 ```yaml
 jobs:
   start:
@@ -170,70 +111,25 @@ jobs:
       - uses: pim-kray/gh-transactional/action/end@v0.0.7-alpha
 ```
 
-## Rollback Semantics (Important!)
-
-Rollback is:
-- Explicit
-- Reverse-order
-- Best-effort
-
-rules: 
-- Only steps that completed successfully are compensated.
-- Steps without `compensate` are skipped.
-- compensation failures are logged but do not stop rollback
-- the transaction ends as `ABORTED`
-
-This keeps behavior deteministic and auditable.
-
+in this case state is stored as a versioned artifact and restored automatically.
 
 ---
 
-## What is this good for?
-- Versioning & Release
-- secret rotation
-- infrastructure changes
-- database migrations
-- deployments
-- stages rollouts
-- destructive workflow you really want to undo safely
+## Who is the maintainer?
+
+This project is currently maintained by me: [Pim Doornekamp](https://github.com/pim-kray). 
+To tell more about myself, I am a backend-engineer and a CI/CD engineer.
+
+I am currently working on a new project called Seekoo, which will release in an alpha version soon!
+
+`gh-transactional` is a side-project made for my own learning experience and for fun.
 
 ---
 
-## What you need to do yourself
-- write idempotent compensation scripts
-- think about side effects
-- accept that rollback is a design decision, not a fallback
-
-This tool won't save you from bad scripts...
-
-It just gives you a clean structure to reason about them.
-
-
----
-## Roadmap
-- [x] Transaction engine
-- [x] Multi-job support
-- [x] Artifact-based state
-- [x] Real-world rollback tests
-- [ ] parallel steps
-- [ ] failure policies per group
-- [ ] GitHub Marketplace release
-- [ ] Better state introspection
-- [ ] Simplify usage
-
----
-# Why is this open-source?
-
-As a devops engineer, I often had scripts that couldn't be run in a transactional context. but that would be great to have in CI/CD.
-I Did not research any existing solutions, since I am also learning more about CI/CD, so this was the perfect chance to try something new.
-
-I built this, because I needed it, and figured it might be useful to others.
-
-
----
-# Contributing
-PRs are welcome! I will review them myself.
-Please read [CONTRIBUTING](CONTRIBUTING.md)
+## Collaborate
+Collaboration is very welcome! This project is made for my own learning experience and for fun. But I do believe that 
+if conditions are met and the project is safely able to reverse changes, it could be a great tool for CI/CD. 
+If you want to collaborate, please feel free to open an issue or a pull request. I am open to any suggestions or feedback.
 
 ---
 # LICENSE

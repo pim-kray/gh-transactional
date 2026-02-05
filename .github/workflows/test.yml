@@ -83,10 +83,10 @@ jobs:
 
       - name: Verify transaction completed
         run: |
-          if [ ! -f tx-state.json ]; then
+          if [ ! -f .gh-transaction/state.json ]; then
             echo "❌ State file not found"
             exit 1
           fi
           echo "✅ Transaction completed"
-          cat tx-state.json
+          cat .gh-transaction/state.json
 
